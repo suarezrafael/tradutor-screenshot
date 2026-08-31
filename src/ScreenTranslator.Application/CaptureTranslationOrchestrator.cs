@@ -85,8 +85,16 @@ public sealed class CaptureTranslationOrchestrator(
                 ScreenTranslatorErrorCode.OcrFailed, "Não foi possível reconhecer o texto da imagem.");
         }
 
-        var blocks = phraseGrouping.Group(words);
-        logger.LogInformation("OCR found {WordCount} words grouped into {BlockCount} phrases", words.Count, blocks.Count);
+        // Below this, a phrase is more often a misread that merged two unrelated pieces of UI (an
+        // icon, a neighboring button) than it is real text Tesseract is just unsure about - and
+        // showing a wrongly-sized, wrongly-worded label is worse than leaving that spot untranslated.
+        const double MinBlockConfidence = 0.5;
+
+        var allBlocks = phraseGrouping.Group(words);
+        var blocks = allBlocks.Where(b => b.Confidence >= MinBlockConfidence).ToList();
+        logger.LogInformation(
+            "OCR found {WordCount} words grouped into {BlockCount} phrases ({DiscardedCount} discarded for low confidence)",
+            words.Count, blocks.Count, allBlocks.Count - blocks.Count);
 
         if (blocks.Count == 0)
         {

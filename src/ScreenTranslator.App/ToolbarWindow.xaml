@@ -4,7 +4,7 @@
         Title="Screen Translator"
         SizeToContent="WidthAndHeight"
         ResizeMode="NoResize"
-        WindowStartupLocation="CenterScreen"
+        WindowStartupLocation="Manual"
         Topmost="True">
     <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="8">
         <Button x:Name="CaptureButton" Content="Capturar" Padding="12,6" Margin="0,0,10,0" Click="OnCaptureClick" />

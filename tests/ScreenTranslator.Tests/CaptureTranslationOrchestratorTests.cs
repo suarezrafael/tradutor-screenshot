@@ -67,6 +67,39 @@ public class CaptureTranslationOrchestratorTests
     }
 
     [Fact]
+    public async Task TranslateRegionAsync_DiscardsLowConfidencePhrases_ButKeepsHighConfidenceOnes()
+    {
+        // A low-confidence phrase is usually a misread that merged an icon or a neighboring button
+        // into one garbled, wrongly-sized block - worse to show than to just leave untranslated.
+        var words = new[]
+        {
+            new ScreenTranslator.Domain.OcrWord("Good", new BoundingBox(0, 0, 40, 16), 0.9),
+            new ScreenTranslator.Domain.OcrWord("Bad", new BoundingBox(0, 100, 40, 16), 0.2),
+        };
+        var orchestrator = BuildOrchestrator(words, translate: t => t == "Good" ? "Bom" : "Ruim");
+
+        var result = await orchestrator.TranslateRegionAsync(
+            new BoundingBox(0, 0, 100, 200), Language.English, Language.PortugueseBrazil, minOverlayFontSize: 14);
+
+        Assert.True(result.Success);
+        var block = Assert.Single(result.Value!.Translations);
+        Assert.Equal("Good", block.OriginalText);
+    }
+
+    [Fact]
+    public async Task TranslateRegionAsync_FailsWithNoTextFound_WhenEveryPhraseIsLowConfidence()
+    {
+        var words = new[] { new ScreenTranslator.Domain.OcrWord("Ch Jr", new BoundingBox(0, 0, 40, 16), 0.3) };
+        var orchestrator = BuildOrchestrator(words);
+
+        var result = await orchestrator.TranslateRegionAsync(
+            new BoundingBox(0, 0, 100, 50), Language.English, Language.PortugueseBrazil, minOverlayFontSize: 14);
+
+        Assert.False(result.Success);
+        Assert.Equal(ScreenTranslatorErrorCode.NoTextFound, result.ErrorCode);
+    }
+
+    [Fact]
     public async Task TranslateRegionAsync_MapsTranslationExceptionToItsErrorCode()
     {
         var words = new[] { new ScreenTranslator.Domain.OcrWord("Hi", new BoundingBox(0, 0, 20, 16), 0.9) };

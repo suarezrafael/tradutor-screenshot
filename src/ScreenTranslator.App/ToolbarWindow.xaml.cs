@@ -53,6 +53,16 @@ public partial class ToolbarWindow : Window
         });
 
         Closing += OnClosing;
+        Loaded += (_, _) => PositionAtTopCenter();
+    }
+
+    /// <summary>Horizontally centered, docked to the top of the (primary) screen instead of the
+    /// window's previous dead-center placement, so it reads as a toolbar rather than a dialog.</summary>
+    private void PositionAtTopCenter()
+    {
+        var workArea = SystemParameters.WorkArea;
+        Left = workArea.Left + (workArea.Width - ActualWidth) / 2;
+        Top = workArea.Top;
     }
 
     private bool _allowClose;

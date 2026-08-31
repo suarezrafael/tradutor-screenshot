@@ -72,4 +72,18 @@ public class TranslationOverlayServiceTests
 
         Assert.True(Assert.Single(result).FontSize >= 9);
     }
+
+    [Fact]
+    public void ComputeOverlay_SizesFromTheSmallerOfHeightAndWidth_WhenABadOcrReadingInflatesOneOfThem()
+    {
+        // A misread that merges a small button with an unrelated neighbor (see
+        // PhraseGroupingServiceTests' tall-outlier-word case) inflates the block's height while its
+        // width stays narrow (a short button label). Sizing from height alone would blow the label
+        // up to a huge, disproportionate size; using whichever dimension is smaller keeps it sane.
+        var blocks = new[] { new OcrBlock("Base Mult", new BoundingBox(0, 0, 40, 60), 0.9, []) };
+
+        var result = _sut.ComputeOverlay(blocks, ["Base Mult"], minFontSize: 6);
+
+        Assert.True(Assert.Single(result).FontSize <= 40 * 0.6 + 0.01);
+    }
 }
