@@ -1,0 +1,14 @@
+# Build artifacts
+bin/
+obj/
+
+# Tesseract trained-data files (downloaded via scripts/download-tessdata.ps1, several MB each)
+src/ScreenTranslator.App/tessdata/
+
+# User-specific / editor
+.vs/
+*.user
+*.suo
+
+# Local app settings (source/target language, hotkeys, etc.)
+appsettings.local.json

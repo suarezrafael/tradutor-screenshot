@@ -1,0 +1,25 @@
+<Window x:Class="ScreenTranslator.Desktop.ToolbarWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Screen Translator"
+        SizeToContent="WidthAndHeight"
+        ResizeMode="NoResize"
+        WindowStartupLocation="CenterScreen"
+        Topmost="True">
+    <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="8">
+        <Button x:Name="CaptureButton" Content="Capturar" Padding="12,6" Margin="0,0,10,0" Click="OnCaptureClick" />
+
+        <TextBlock Text="Origem:" VerticalAlignment="Center" Margin="0,0,4,0" />
+        <ComboBox x:Name="SourceLanguageCombo" Width="140" DisplayMemberPath="DisplayName" Margin="0,0,10,0"
+                  SelectionChanged="OnSourceLanguageChanged" />
+
+        <TextBlock Text="Destino:" VerticalAlignment="Center" Margin="0,0,4,0" />
+        <ComboBox x:Name="TargetLanguageCombo" Width="140" DisplayMemberPath="DisplayName" Margin="0,0,10,0"
+                  SelectionChanged="OnTargetLanguageChanged" />
+
+        <Button x:Name="CopyTextButton" Content="Copiar texto" Padding="10,6" Margin="0,0,6,0" Click="OnCopyTextClick" IsEnabled="False" />
+        <Button x:Name="CopyImageButton" Content="Copiar imagem" Padding="10,6" Margin="0,0,6,0" Click="OnCopyImageClick" IsEnabled="False" />
+        <Button x:Name="SettingsButton" Content="Configurações" Padding="10,6" Margin="0,0,6,0" Click="OnSettingsClick" />
+        <Button x:Name="CloseButton" Content="Fechar" Padding="10,6" Click="OnCloseClick" />
+    </StackPanel>
+</Window>

@@ -1,0 +1,11 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/ScreenTranslator.App/ScreenTranslator.App.csproj" />
+    <Project Path="src/ScreenTranslator.Application/ScreenTranslator.Application.csproj" />
+    <Project Path="src/ScreenTranslator.Domain/ScreenTranslator.Domain.csproj" />
+    <Project Path="src/ScreenTranslator.Infrastructure/ScreenTranslator.Infrastructure.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/ScreenTranslator.Tests/ScreenTranslator.Tests.csproj" />
+  </Folder>
+</Solution>
