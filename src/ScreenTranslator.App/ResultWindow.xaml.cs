@@ -13,15 +13,16 @@ namespace ScreenTranslator.Desktop;
 /// <summary>Shows the captured screenshot with translation labels drawn above each original phrase.</summary>
 public partial class ResultWindow : Window
 {
-    // Below this, stop shrinking and wrap to a second line instead - mirrors OverTranslate's
-    // (github.com/asd880921/OverTranslate) approach: never truncate with an ellipsis, only shrink
-    // (down to a readable floor) or wrap, so the full translation is always visible without hovering.
+    // Below this, stop shrinking and let the label clip instead of growing past its slot - a tooltip
+    // (see BuildTooltip) always carries the full translation, so clipping a menu/tab label at the
+    // readable floor beats blowing up a tightly packed row or wrapping into a second line, which
+    // would exceed the original text's own height.
     private const double ReadableMinFontSize = 7.0;
 
     // A block narrower than this reads as a menu/tab/button label rather than a sentence - shrinking
-    // it (and wrapping as a last resort) keeps it from ballooning across a tightly packed row just
-    // because a short CJK label became a much longer Portuguese phrase. Wider blocks are left free to
-    // grow past their own slot on one line instead, which is what a paragraph translation wants.
+    // it to fit keeps it from ballooning across a tightly packed row just because a short CJK label
+    // became a much longer Portuguese phrase. Wider blocks are left free to grow past their own slot
+    // on one line instead, which is what a paragraph translation wants.
     private const double CompactBlockWidthThreshold = 200.0;
 
     // SemiBold, not Normal/Bold - see the remarks where this is applied in Render().
@@ -118,7 +119,10 @@ public partial class ResultWindow : Window
             // MinWidth/MinHeight keep it at least as big as the original so a short translation still
             // fully covers what it's replacing.
             var availableWidth = block.TranslationBounds.Width / dpiScale;
-            var (fontSize, wrap) = FitTranslationText(block.TranslatedText, fontFamily, block.FontSize, availableWidth);
+            var isCompact = availableWidth < CompactBlockWidthThreshold;
+            var fontSize = isCompact
+                ? CalibrateFontSize(block.TranslatedText, fontFamily, block.FontSize, availableWidth)
+                : block.FontSize;
 
             var label = new Border
             {
@@ -126,8 +130,13 @@ public partial class ResultWindow : Window
                 CornerRadius = new CornerRadius(2),
                 Padding = new Thickness(2, 0, 2, 0),
                 MinWidth = availableWidth,
-                MaxWidth = wrap ? availableWidth : double.PositiveInfinity,
+                MaxWidth = isCompact ? availableWidth : double.PositiveInfinity,
                 MinHeight = block.TranslationBounds.Height / dpiScale,
+                // A menu/tab label must stay within the space the original text occupied even if the
+                // readable-floor font still doesn't fit - clip rather than grow or wrap, since the
+                // tooltip below always carries the full text.
+                ClipToBounds = isCompact,
+                ToolTip = BuildToolTip(block.TranslatedText),
                 Child = new TextBlock
                 {
                     Text = block.TranslatedText,
@@ -135,7 +144,7 @@ public partial class ResultWindow : Window
                     FontSize = fontSize,
                     FontWeight = OverlayFontWeight,
                     Foreground = textBrush,
-                    TextWrapping = wrap ? TextWrapping.Wrap : TextWrapping.NoWrap,
+                    TextWrapping = TextWrapping.NoWrap,
                     VerticalAlignment = VerticalAlignment.Center,
                 },
             };
@@ -147,24 +156,41 @@ public partial class ResultWindow : Window
     }
 
     /// <summary>
-    /// Decides how a translation should fit its slot: as-is if it already fits (or the slot is wide
-    /// enough to read as a sentence, not a menu label), shrunk to fit if narrower, or shrunk to a
-    /// readable floor and wrapped to a second line if even that isn't enough. Never truncates - see
-    /// the class-level remarks on <see cref="ReadableMinFontSize"/>.
+    /// Shrinks a menu/tab-sized translation down to fit its original slot's width, down to a readable
+    /// floor (<see cref="ReadableMinFontSize"/>) - past that point the label clips instead of shrinking
+    /// further into illegibility, since <see cref="BuildToolTip"/> always has the full text.
     /// </summary>
-    private (double FontSize, bool Wrap) FitTranslationText(
-        string text, FontFamily fontFamily, double idealFontSize, double availableWidth)
+    private double CalibrateFontSize(string text, FontFamily fontFamily, double idealFontSize, double availableWidth)
     {
         var measuredWidth = MeasureTextWidth(text, fontFamily, idealFontSize);
-        if (measuredWidth <= availableWidth || availableWidth >= CompactBlockWidthThreshold)
+        if (measuredWidth <= availableWidth)
         {
-            return (idealFontSize, false);
+            return idealFontSize;
         }
 
-        var shrunkFontSize = Math.Max(ReadableMinFontSize, idealFontSize * availableWidth / measuredWidth);
-        var shrunkWidth = MeasureTextWidth(text, fontFamily, shrunkFontSize);
-        return shrunkWidth <= availableWidth ? (shrunkFontSize, false) : (shrunkFontSize, true);
+        return Math.Max(ReadableMinFontSize, idealFontSize * availableWidth / measuredWidth);
     }
+
+    /// <summary>
+    /// A fully opaque tooltip (no inherited transparency from this window's own
+    /// AllowsTransparency) so the translation reads crisply even when the label itself had to shrink
+    /// or clip to fit a tight menu-bar slot.
+    /// </summary>
+    private static ToolTip BuildToolTip(string text) => new()
+    {
+        Background = new SolidColorBrush(Color.FromRgb(0x1A, 0x1A, 0x1A)),
+        Foreground = new SolidColorBrush(Colors.White),
+        BorderBrush = new SolidColorBrush(Color.FromRgb(0x40, 0x40, 0x40)),
+        BorderThickness = new Thickness(1),
+        Padding = new Thickness(8, 4, 8, 4),
+        FontSize = 13,
+        Content = new TextBlock
+        {
+            Text = text,
+            TextWrapping = TextWrapping.Wrap,
+            MaxWidth = 400,
+        },
+    };
 
     private double MeasureTextWidth(string text, FontFamily fontFamily, double fontSize)
     {
