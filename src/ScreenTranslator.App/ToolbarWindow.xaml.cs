@@ -218,6 +218,16 @@ public partial class ToolbarWindow : Window
 
     private void OnCloseClick(object sender, RoutedEventArgs e) => Close();
 
+    private void OnBarMouseLeftButtonDown(object sender, System.Windows.Input.MouseButtonEventArgs e)
+    {
+        // No native title bar (WindowStyle="None") to drag by, so the bar itself doubles as one -
+        // only when the click lands on the bar's own background, not on a button/combo inside it.
+        if (e.OriginalSource == sender)
+        {
+            DragMove();
+        }
+    }
+
     private void OnClosing(object? sender, CancelEventArgs e)
     {
         if (_allowClose || !_flowController.Settings.MinimizeToTray)

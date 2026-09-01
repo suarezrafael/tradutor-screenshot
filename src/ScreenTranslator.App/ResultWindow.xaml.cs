@@ -13,6 +13,20 @@ namespace ScreenTranslator.Desktop;
 /// <summary>Shows the captured screenshot with translation labels drawn above each original phrase.</summary>
 public partial class ResultWindow : Window
 {
+    // Below this, stop shrinking and wrap to a second line instead - mirrors OverTranslate's
+    // (github.com/asd880921/OverTranslate) approach: never truncate with an ellipsis, only shrink
+    // (down to a readable floor) or wrap, so the full translation is always visible without hovering.
+    private const double ReadableMinFontSize = 7.0;
+
+    // A block narrower than this reads as a menu/tab/button label rather than a sentence - shrinking
+    // it (and wrapping as a last resort) keeps it from ballooning across a tightly packed row just
+    // because a short CJK label became a much longer Portuguese phrase. Wider blocks are left free to
+    // grow past their own slot on one line instead, which is what a paragraph translation wants.
+    private const double CompactBlockWidthThreshold = 200.0;
+
+    // SemiBold, not Normal/Bold - see the remarks where this is applied in Render().
+    private static readonly FontWeight OverlayFontWeight = FontWeights.SemiBold;
+
     private readonly TranslationSessionResult _session;
     private readonly AppSettings _settings;
     private double _dpiScale = 1.0;
@@ -91,28 +105,37 @@ public partial class ResultWindow : Window
 
         var backgroundBrush = SolidBrush(_settings.OverlayBackgroundColor, _settings.OverlayBackgroundOpacity);
         var textBrush = SolidBrush(_settings.OverlayTextColor, _settings.OverlayBackgroundOpacity);
+        // CJK-capable fallback (target language can be Chinese/Japanese/Korean, not just pt-BR) and
+        // SemiBold weight - not Normal, not Bold - mirroring OverTranslate's overlay font choice: for
+        // CJK fonts that don't ship a true SemiBold face, WPF synthesizes from the nearest available
+        // weight, and 600 lands on the Bold (700) face rather than Regular (400), reading as heavier
+        // and more legible over a busy screenshot background than plain text would.
+        var fontFamily = new FontFamily("Segoe UI, Microsoft YaHei, Microsoft JhengHei, Sans-Serif");
 
         foreach (var block in _session.Translations)
         {
-            // Anchored at the original text's own top-left (OverTranslate-style overlay-in-place),
-            // but sized to its natural content rather than clipped to the original's box: the full
-            // translation must always be readable without hovering, even if that means it extends
-            // past where the original text ended. MinWidth/MinHeight keep it at least as big as the
-            // original so a short translation still fully covers what it's replacing.
+            // Anchored at the original text's own top-left (OverTranslate-style overlay-in-place).
+            // MinWidth/MinHeight keep it at least as big as the original so a short translation still
+            // fully covers what it's replacing.
+            var availableWidth = block.TranslationBounds.Width / dpiScale;
+            var (fontSize, wrap) = FitTranslationText(block.TranslatedText, fontFamily, block.FontSize, availableWidth);
+
             var label = new Border
             {
                 Background = backgroundBrush,
                 CornerRadius = new CornerRadius(2),
                 Padding = new Thickness(2, 0, 2, 0),
-                MinWidth = block.TranslationBounds.Width / dpiScale,
+                MinWidth = availableWidth,
+                MaxWidth = wrap ? availableWidth : double.PositiveInfinity,
                 MinHeight = block.TranslationBounds.Height / dpiScale,
                 Child = new TextBlock
                 {
                     Text = block.TranslatedText,
-                    FontFamily = new FontFamily("Segoe UI"),
-                    FontSize = block.FontSize,
+                    FontFamily = fontFamily,
+                    FontSize = fontSize,
+                    FontWeight = OverlayFontWeight,
                     Foreground = textBrush,
-                    TextWrapping = TextWrapping.NoWrap,
+                    TextWrapping = wrap ? TextWrapping.Wrap : TextWrapping.NoWrap,
                     VerticalAlignment = VerticalAlignment.Center,
                 },
             };
@@ -121,6 +144,40 @@ public partial class ResultWindow : Window
             Canvas.SetTop(label, block.TranslationBounds.Y / dpiScale);
             OverlayCanvas.Children.Add(label);
         }
+    }
+
+    /// <summary>
+    /// Decides how a translation should fit its slot: as-is if it already fits (or the slot is wide
+    /// enough to read as a sentence, not a menu label), shrunk to fit if narrower, or shrunk to a
+    /// readable floor and wrapped to a second line if even that isn't enough. Never truncates - see
+    /// the class-level remarks on <see cref="ReadableMinFontSize"/>.
+    /// </summary>
+    private (double FontSize, bool Wrap) FitTranslationText(
+        string text, FontFamily fontFamily, double idealFontSize, double availableWidth)
+    {
+        var measuredWidth = MeasureTextWidth(text, fontFamily, idealFontSize);
+        if (measuredWidth <= availableWidth || availableWidth >= CompactBlockWidthThreshold)
+        {
+            return (idealFontSize, false);
+        }
+
+        var shrunkFontSize = Math.Max(ReadableMinFontSize, idealFontSize * availableWidth / measuredWidth);
+        var shrunkWidth = MeasureTextWidth(text, fontFamily, shrunkFontSize);
+        return shrunkWidth <= availableWidth ? (shrunkFontSize, false) : (shrunkFontSize, true);
+    }
+
+    private double MeasureTextWidth(string text, FontFamily fontFamily, double fontSize)
+    {
+        var typeface = new Typeface(fontFamily, FontStyles.Normal, OverlayFontWeight, FontStretches.Normal);
+        var formatted = new FormattedText(
+            text,
+            System.Globalization.CultureInfo.CurrentCulture,
+            FlowDirection.LeftToRight,
+            typeface,
+            fontSize,
+            Brushes.Black,
+            _dpiScale);
+        return formatted.Width;
     }
 
     private void OnButtonBarMouseLeftButtonDown(object sender, System.Windows.Input.MouseButtonEventArgs e)

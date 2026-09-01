@@ -5,21 +5,29 @@
         SizeToContent="WidthAndHeight"
         ResizeMode="NoResize"
         WindowStartupLocation="Manual"
+        WindowStyle="None"
+        AllowsTransparency="True"
+        Background="Transparent"
         Topmost="True">
-    <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="8">
-        <Button x:Name="CaptureButton" Content="Capturar" Padding="12,6" Margin="0,0,10,0" Click="OnCaptureClick" />
+    <Border Margin="10" Padding="6" Background="#CC202020" CornerRadius="6"
+            MouseLeftButtonDown="OnBarMouseLeftButtonDown">
+        <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+            <Button x:Name="CaptureButton" Content="Capturar" Style="{StaticResource OverlayButtonStyle}" Margin="0,0,8,0" Click="OnCaptureClick" />
 
-        <TextBlock Text="Origem:" VerticalAlignment="Center" Margin="0,0,4,0" />
-        <ComboBox x:Name="SourceLanguageCombo" Width="140" DisplayMemberPath="DisplayName" Margin="0,0,10,0"
-                  SelectionChanged="OnSourceLanguageChanged" />
+            <TextBlock Text="Origem:" Style="{StaticResource OverlayLabelStyle}" Margin="0,0,4,0" />
+            <ComboBox x:Name="SourceLanguageCombo" Width="140" DisplayMemberPath="DisplayName"
+                      Style="{StaticResource OverlayComboBoxStyle}" Margin="0,0,8,0"
+                      SelectionChanged="OnSourceLanguageChanged" />
 
-        <TextBlock Text="Destino:" VerticalAlignment="Center" Margin="0,0,4,0" />
-        <ComboBox x:Name="TargetLanguageCombo" Width="140" DisplayMemberPath="DisplayName" Margin="0,0,10,0"
-                  SelectionChanged="OnTargetLanguageChanged" />
+            <TextBlock Text="Destino:" Style="{StaticResource OverlayLabelStyle}" Margin="0,0,4,0" />
+            <ComboBox x:Name="TargetLanguageCombo" Width="140" DisplayMemberPath="DisplayName"
+                      Style="{StaticResource OverlayComboBoxStyle}" Margin="0,0,8,0"
+                      SelectionChanged="OnTargetLanguageChanged" />
 
-        <Button x:Name="CopyTextButton" Content="Copiar texto" Padding="10,6" Margin="0,0,6,0" Click="OnCopyTextClick" IsEnabled="False" />
-        <Button x:Name="CopyImageButton" Content="Copiar imagem" Padding="10,6" Margin="0,0,6,0" Click="OnCopyImageClick" IsEnabled="False" />
-        <Button x:Name="SettingsButton" Content="Configurações" Padding="10,6" Margin="0,0,6,0" Click="OnSettingsClick" />
-        <Button x:Name="CloseButton" Content="Fechar" Padding="10,6" Click="OnCloseClick" />
-    </StackPanel>
+            <Button x:Name="CopyTextButton" Content="Copiar texto" Style="{StaticResource OverlayButtonStyle}" Margin="0,0,4,0" Click="OnCopyTextClick" IsEnabled="False" />
+            <Button x:Name="CopyImageButton" Content="Copiar imagem" Style="{StaticResource OverlayButtonStyle}" Margin="0,0,4,0" Click="OnCopyImageClick" IsEnabled="False" />
+            <Button x:Name="SettingsButton" Content="Configurações" Style="{StaticResource OverlayButtonStyle}" Margin="0,0,4,0" Click="OnSettingsClick" />
+            <Button x:Name="CloseButton" Content="Fechar" Style="{StaticResource OverlayButtonStyle}" Click="OnCloseClick" />
+        </StackPanel>
+    </Border>
 </Window>
