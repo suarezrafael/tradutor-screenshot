@@ -190,6 +190,14 @@ public partial class ResultWindow : Window
         }
     }
 
+    private void OnImageAreaMouseLeftButtonDown(object sender, System.Windows.Input.MouseButtonEventArgs e)
+    {
+        // The image area has no clickable children of its own (translation labels are just static
+        // text), so - unlike the button bar - it can always drag regardless of what OriginalSource is,
+        // giving a second, much larger drag handle to make up for having no native title bar.
+        DragMove();
+    }
+
     private static SolidColorBrush SolidBrush(string hexColor, double opacity)
     {
         var color = (Color)ColorConverter.ConvertFromString(hexColor)!;

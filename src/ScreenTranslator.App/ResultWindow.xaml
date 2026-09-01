@@ -31,7 +31,11 @@
                  PositionOverCapture's assumption that the image sits at a fixed offset from the
                  window's origin - most visible for a small capture in a window widened by the button
                  bar, especially near the screen's left edge where there's no room to compensate. -->
-            <Grid x:Name="ImageHost" HorizontalAlignment="Left" VerticalAlignment="Top">
+            <!-- Background="Transparent" (not left null) so the whole grid - not just the opaque
+                 pixels of the Image/labels - is hit-testable, letting the image area double as a
+                 second drag handle alongside the button bar (no native title bar to grab). -->
+            <Grid x:Name="ImageHost" HorizontalAlignment="Left" VerticalAlignment="Top"
+                  Background="Transparent" MouseLeftButtonDown="OnImageAreaMouseLeftButtonDown">
                 <Image x:Name="CaptureImage" Stretch="Fill" />
                 <Canvas x:Name="OverlayCanvas" />
             </Grid>
